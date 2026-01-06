@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+canvas {
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
+.str-chat {
+  height: 100%;
+  background-color: inherit;
+}
+.str-chat__container,
+.str-chat__main-panel {
+  height: 100%;
+}
+.str-chat__list {
+  flex: 1;
+  overflow-y: auto;
+}

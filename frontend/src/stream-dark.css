@@ -1,0 +1,46 @@
+
+.str-chat,
+.str-chat-channel,
+.str-chat__list,
+.str-chat__main-panel,
+.str-chat__channel-list,
+.str-chat__thread,
+.str-chat__thread-list {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+.str-chat__channel-header,
+.str-chat__message-input,
+.str-chat__input-flat,
+.str-chat__input-flat-wrapper {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+.str-chat__textarea textarea {
+  background-color: transparent !important;
+}
+.str-chat__channel-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.str-chat__input-flat {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.str-chat__date-separator-line {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.str-chat__date-separator-date {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+.str-chat__ul {
+  background-color: transparent !important;
+}
+.str-chat__theme-dark {
+  --str-chat__background-color: transparent;
+  --str-chat__secondary-background-color: transparent;
+  --str-chat__surface-color: transparent;
+  --str-chat__text-color: #e5e7eb;
+  --str-chat__primary-color: #6366f1;
+}
