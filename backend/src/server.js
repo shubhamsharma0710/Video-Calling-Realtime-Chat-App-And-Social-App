@@ -22,12 +22,14 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); 
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      callback(new Error("Not allowed by CORS"));
+
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
@@ -41,14 +43,16 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Backend running 🚀");
+  res.status(200).send("Backend running 🚀");
 });
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+    res.sendFile(
+      path.join(__dirname, "../frontend/dist/index.html")
+    );
   });
 }
 
