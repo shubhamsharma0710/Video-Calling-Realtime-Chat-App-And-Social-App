@@ -1,15 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useAuthUser from "../hooks/useAuthUser";
 import useLogout from "../hooks/useLogout";
 import { BellIcon, LogOutIcon } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
-import { getFriendRequests } from "../lib/api";
+import {
+  getFriendRequests,
+  acceptFriendRequest,
+} from "../lib/api";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
   const { logoutMutation } = useLogout();
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const isChatPage = location.pathname?.startsWith("/chat");
 
@@ -19,61 +23,91 @@ const Navbar = () => {
     enabled: !!authUser,
   });
 
+  const { mutate: acceptRequest } = useMutation({
+    mutationFn: acceptFriendRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+    },
+  });
+
   return (
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center backdrop-blur-lg bg-opacity-90">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex items-center justify-between">
 
           <div className={`flex items-center gap-3 ${!isChatPage ? "lg:hidden" : "flex"}`}>
-            <Link
-              to="/"
-              className="flex items-center gap-2 transition-transform hover:scale-105 active:scale-95"
-            >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <img
-                  src="/setu-logo.png"
-                  alt="Setu Logo"
-                  className="w-7 h-7 object-contain"
-                />
-              </div>
-              <span className="text-xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
-                Setu
-              </span>
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/setu-logo.png" alt="Setu" className="w-7 h-7" />
+              <span className="text-xl font-bold">Setu</span>
             </Link>
           </div>
 
-          {!isChatPage && <div className="hidden lg:block"></div>}
+          {!isChatPage && <div className="hidden lg:block" />}
 
           <div className="flex items-center gap-3 sm:gap-4">
 
-            <Link to="/friends" className="relative">
-              <button className="btn btn-ghost btn-circle btn-sm sm:btn-md">
-                <BellIcon className="h-5 w-5 sm:h-6 sm:w-6 opacity-70" />
+            <div className="dropdown dropdown-end">
+              <button className="btn btn-ghost btn-circle relative" tabIndex={0}>
+                <BellIcon className="h-6 w-6 opacity-70" />
+                {friendRequests.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-error text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {friendRequests.length}
+                  </span>
+                )}
               </button>
 
-              {friendRequests.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-error text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                  {friendRequests.length}
-                </span>
-              )}
-            </Link>
+              <div
+                tabIndex={0}
+                className="dropdown-content mt-3 w-80 rounded-box bg-base-100 shadow-xl p-3"
+              >
+                <p className="font-semibold mb-2">Notifications</p>
 
-            <ThemeSelector />
+                {friendRequests.length === 0 && (
+                  <p className="text-sm opacity-70">
+                    No new notifications
+                  </p>
+                )}
 
-            <div className="avatar hidden sm:block">
-              <div className="w-9 rounded-full ring ring-primary/20">
-                <img
-                  src={authUser?.profilePic || "/avatar.png"}
-                  alt="User Avatar"
-                />
+                {friendRequests.map((req) => (
+                  <div
+                    key={req._id}
+                    className="flex items-center justify-between gap-2 py-2"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <img
+                        src={req.sender.profilePic}
+                        alt={req.sender.fullName}
+                        className="w-9 h-9 rounded-full"
+                      />
+                      <div className="truncate">
+                        <p className="text-sm font-medium truncate">
+                          {req.sender.fullName}
+                        </p>
+                        <p className="text-xs opacity-60">
+                          sent you a friend request
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => acceptRequest(req._id)}
+                      className="btn btn-success btn-xs"
+                    >
+                      Accept
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
+            <ThemeSelector />
+
             <button
-              className="btn btn-ghost btn-circle btn-sm sm:btn-md text-error"
+              className="btn btn-ghost btn-circle text-error"
               onClick={logoutMutation}
             >
-              <LogOutIcon className="h-5 w-5 sm:h-6 sm:w-6 opacity-70" />
+              <LogOutIcon className="h-6 w-6 opacity-70" />
             </button>
           </div>
         </div>
