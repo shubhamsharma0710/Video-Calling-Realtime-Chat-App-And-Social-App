@@ -7,18 +7,29 @@ import path from "path";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
-
 import { connectDB } from "./lib/db.js";
 
 const app = express();
-const PORT = process.env.PORT;
+
+const PORT = process.env.PORT || 5001;
 
 const __dirname = path.resolve();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://setuchatandvideocall-frontend.onrender.com",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    credentials: true, 
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); 
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
   })
 );
 
@@ -29,15 +40,19 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Backend running 🚀");
+});
+
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  connectDB();
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  await connectDB();
 });
