@@ -20,8 +20,11 @@ export const getAuthUser = async () => {
     const res = await axiosInstance.get("/auth/me");
     return res.data;
   } catch (error) {
-    console.log("Error in getAuthUser:", error);
-    return null;
+    
+    if (error.response?.status === 401) {
+      return null;
+    }
+    throw error;
   }
 };
 
@@ -30,7 +33,6 @@ export const completeOnboarding = async (userData) => {
   return response.data;
 };
 
-// ---------- USERS ----------
 export async function getUserFriends() {
   const response = await axiosInstance.get("/users/friends");
   return response.data;
@@ -65,7 +67,6 @@ export async function acceptFriendRequest(requestId) {
   return response.data;
 }
 
-// ---------- CHAT ----------
 export async function getStreamToken() {
   const response = await axiosInstance.get("/chat/token");
   return response.data;
