@@ -82,9 +82,29 @@ const ChatPage = () => {
     };
   }, [authUser, tokenData, targetUserId]);
 
-  const handleVideoCall = () => {
+  const handleVideoCall = async () => {
+    if (!channel || !authUser) return;
+
     const callId = [authUser._id, targetUserId].sort().join("-");
-    navigate(`/call/${callId}`);
+    const callLink = `${window.location.origin}/call/${callId}`;
+
+    try {
+      await channel.sendMessage({
+        text: "📞 Video call started",
+        attachments: [
+          {
+            type: "link",
+            title: "Join Video Call",
+            title_link: callLink,
+          },
+        ],
+      });
+
+      navigate(`/call/${callId}`);
+    } catch (error) {
+      console.error("Failed to send call link:", error);
+      toast.error("Could not start call");
+    }
   };
 
   if (!client || !channel) return <ChatLoader />;
@@ -96,7 +116,7 @@ const ChatPage = () => {
         theme={isDark ? "messaging dark" : "messaging light"}
       >
         <Channel channel={channel}>
-         
+
           <CallButton handleVideoCall={handleVideoCall} />
 
           <Window>
