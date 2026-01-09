@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import useLogout from "../hooks/useLogout";
 import { BellIcon, LogOutIcon } from "lucide-react";
@@ -39,18 +39,21 @@ const Navbar = () => {
     },
   });
 
+  const videoClientRef = useRef(null);
   const [incomingCall, setIncomingCall] = useState(null);
 
   useEffect(() => {
-    if (!authUser) return;
+    if (!authUser || videoClientRef.current) return;
 
-    let videoClient;
+    let active = true;
 
-    const initIncomingCallListener = async () => {
+    const initVideoClient = async () => {
       try {
         const { token } = await getStreamToken();
 
-        videoClient = new StreamVideoClient({
+        if (!active) return;
+
+        const client = new StreamVideoClient({
           apiKey: STREAM_API_KEY,
           user: {
             id: authUser._id,
@@ -60,21 +63,27 @@ const Navbar = () => {
           token,
         });
 
-        videoClient.on("call.created", (event) => {
+        client.on("call.created", (event) => {
           setIncomingCall({
             callId: event.call.id,
             from: event.call.created_by?.name || "Someone",
           });
         });
+
+        videoClientRef.current = client;
       } catch (err) {
-        console.error("Incoming call listener error:", err);
+        console.error("Video client init failed:", err);
       }
     };
 
-    initIncomingCallListener();
+    initVideoClient();
 
     return () => {
-      if (videoClient) videoClient.disconnectUser();
+      active = false;
+      if (videoClientRef.current) {
+        videoClientRef.current.disconnectUser();
+        videoClientRef.current = null;
+      }
     };
   }, [authUser]);
 
@@ -97,9 +106,8 @@ const Navbar = () => {
             <div className="dropdown dropdown-end">
               <button className="btn btn-ghost btn-circle relative" tabIndex={0}>
                 <BellIcon className="h-6 w-6 opacity-70" />
-
                 {(friendRequests.length > 0 || incomingCall) && (
-                  <span className="absolute -top-1 -right-1 bg-error text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-error text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
                     {friendRequests.length + (incomingCall ? 1 : 0)}
                   </span>
                 )}
@@ -113,12 +121,9 @@ const Navbar = () => {
 
                 {incomingCall && (
                   <div className="flex items-center justify-between gap-2 py-2 bg-warning/20 rounded px-2 mb-2">
-                    <div>
-                      <p className="text-sm font-semibold">
-                        📞 {incomingCall.from} is calling
-                      </p>
-                    </div>
-
+                    <p className="text-sm font-semibold">
+                      📞 {incomingCall.from} is calling
+                    </p>
                     <div className="flex gap-1">
                       <button
                         className="btn btn-success btn-xs"
@@ -129,7 +134,6 @@ const Navbar = () => {
                       >
                         Accept
                       </button>
-
                       <button
                         className="btn btn-error btn-xs"
                         onClick={() => setIncomingCall(null)}
@@ -149,22 +153,16 @@ const Navbar = () => {
                     key={req._id}
                     className="flex items-center justify-between gap-2 py-2"
                   >
-                    <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="flex items-center gap-2">
                       <img
                         src={req.sender.profilePic}
                         alt={req.sender.fullName}
                         className="w-9 h-9 rounded-full"
                       />
-                      <div className="truncate">
-                        <p className="text-sm font-medium truncate">
-                          {req.sender.fullName}
-                        </p>
-                        <p className="text-xs opacity-60">
-                          sent you a friend request
-                        </p>
-                      </div>
+                      <p className="text-sm truncate">
+                        {req.sender.fullName}
+                      </p>
                     </div>
-
                     <button
                       onClick={() => acceptRequest(req._id)}
                       className="btn btn-success btn-xs"
