@@ -9,7 +9,11 @@ const FriendsPage = () => {
     const fetchFriends = async () => {
       try {
         const res = await axiosInstance.get("/users/friends");
-        setFriends(Array.isArray(res.data) ? res.data : []);
+        
+        const safeFriends = Array.isArray(res.data)
+          ? res.data.filter(Boolean)
+          : [];
+        setFriends(safeFriends);
       } catch (error) {
         console.error("Fetch friends error:", error);
         setFriends([]);
@@ -21,9 +25,7 @@ const FriendsPage = () => {
     fetchFriends();
   }, []);
 
-  if (loading) {
-    return <p className="p-4">Loading...</p>;
-  }
+  if (loading) return <p className="p-4">Loading...</p>;
 
   return (
     <div className="p-6">
@@ -40,7 +42,7 @@ const FriendsPage = () => {
             >
               <img
                 src={friend.profilePic || "/avatar.png"}
-                alt=""
+                alt={friend.fullName}
                 className="w-10 h-10 rounded-full"
               />
               <div>
